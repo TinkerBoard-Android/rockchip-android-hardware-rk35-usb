@@ -36,7 +36,7 @@ constexpr int PULL_UP_DELAY = 500000;
 #define BUILD_TYPE "ro.build.type"
 #define GADGET_PATH "/config/usb_gadget/g1/"
 #define PULLUP_PATH GADGET_PATH "UDC"
-#define GADGET_NAME "fc000000.usb"
+#define GADGET_NAME_DEFAULT "fc000000.usb"
 #define PERSISTENT_BOOT_MODE "ro.bootmode"
 #define VENDOR_ID_PATH GADGET_PATH "idVendor"
 #define PRODUCT_ID_PATH GADGET_PATH "idProduct"
@@ -49,10 +49,10 @@ constexpr int PULL_UP_DELAY = 500000;
 #define FUNCTIONS_PATH GADGET_PATH "functions/"
 #define FUNCTION_NAME "function"
 #define FUNCTION_PATH CONFIG_PATH FUNCTION_NAME
-#define RNDIS_PATH FUNCTIONS_PATH "gsi.rndis"
 
 #define PERSISTENT_VENDOR_CONFIG "persist.vendor.usb.usbradio.config"
 #define VENDOR_CONFIG "vendor.usb.config"
+#define VENDOR_UDC_CONFIG "vendor.usb.controller"
 
 #define VENDOR_ID_ROCKCHIP  "0x2207"
 #define VENDOR_ID_GOOGLE    "0x18d1"
@@ -111,7 +111,7 @@ static void *monitorFfs(void *param) {
   // notify here if the endpoints are already present.
   if (descriptorWritten) {
     usleep(PULL_UP_DELAY);
-    if (!!WriteStringToFile(GADGET_NAME, PULLUP_PATH)) {
+    if (!!WriteStringToFile(usbGadget->mGadgetName, PULLUP_PATH)) {
       lock_guard<mutex> lock(usbGadget->mLock);
       usbGadget->mCurrentUsbFunctionsApplied = true;
       gadgetPullup = true;
@@ -163,7 +163,7 @@ static void *monitorFfs(void *param) {
                 < PULL_UP_DELAY)
               usleep(PULL_UP_DELAY);
 
-            if(!!WriteStringToFile(GADGET_NAME, PULLUP_PATH)) {
+            if(!!WriteStringToFile(usbGadget->mGadgetName, PULLUP_PATH)) {
               lock_guard<mutex> lock(usbGadget->mLock);
               usbGadget->mCurrentUsbFunctionsApplied = true;
               ALOGI("GADGET pulled up");
@@ -190,6 +190,7 @@ static void *monitorFfs(void *param) {
 UsbGadget::UsbGadget()
     : mMonitorCreated(false), mCurrentUsbFunctionsApplied(false) {
   if (access(OS_DESC_PATH, R_OK) != 0) ALOGE("configfs setup not done yet");
+  mGadgetName = GetProperty(VENDOR_UDC_CONFIG, GADGET_NAME_DEFAULT);
 }
 
 static int unlinkFunctions(const char *path) {
@@ -552,7 +553,7 @@ V1_0::Status UsbGadget::setupFunctions(
 
   // Pull up the gadget right away when there are no ffs functions.
   if (!ffsEnabled) {
-    if (!WriteStringToFile(GADGET_NAME, PULLUP_PATH)) return Status::ERROR;
+    if (!WriteStringToFile(mGadgetName, PULLUP_PATH)) return Status::ERROR;
     mCurrentUsbFunctionsApplied = true;
     if (callback)
       callback->setCurrentUsbFunctionsCb(functions, Status::SUCCESS);

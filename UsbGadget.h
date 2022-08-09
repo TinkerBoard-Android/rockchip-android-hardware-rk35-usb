@@ -81,6 +81,9 @@ struct UsbGadget : public IUsbGadget {
   uint64_t mCurrentUsbFunctions;
   bool mCurrentUsbFunctionsApplied;
 
+  // Save udc path
+  std::string mGadgetName;
+
   Return<void> setCurrentUsbFunctions(uint64_t functions,
                                       const sp<V1_0::IUsbGadgetCallback> &callback,
                                       uint64_t timeout) override;
