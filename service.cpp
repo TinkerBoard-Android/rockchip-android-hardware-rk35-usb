@@ -16,9 +16,14 @@
 
 #define LOG_TAG "android.hardware.usb@1.2-service.rockchip"
 
+#define ENABLE_GADGET_HAL 0
+
 #include <hidl/HidlTransportSupport.h>
 #include "Usb.h"
+
+#if ENABLE_GADGET_HAL
 #include "UsbGadget.h"
+#endif
 
 using android::sp;
 
@@ -27,8 +32,10 @@ using android::hardware::configureRpcThreadpool;
 using android::hardware::joinRpcThreadpool;
 
 // Generated HIDL files
+#if ENABLE_GADGET_HAL
 using android::hardware::usb::gadget::V1_1::IUsbGadget;
 using android::hardware::usb::gadget::V1_1::implementation::UsbGadget;
+#endif
 using android::hardware::usb::V1_2::IUsb;
 using android::hardware::usb::V1_2::implementation::Usb;
 
@@ -37,9 +44,8 @@ using android::status_t;
 
 int main() {
     android::sp<IUsb> service = new Usb();
-    android::sp<IUsbGadget> service2 = new UsbGadget();
 
-    configureRpcThreadpool(2, true /*callerWillJoin*/);
+    configureRpcThreadpool(1, true /*callerWillJoin*/);
     status_t status = service->registerAsService();
 
     if (status != OK) {
@@ -47,12 +53,16 @@ int main() {
         return 1;
     }
 
+#if ENABLE_GADGET_HAL
+    ALOGI("Support Gadget HAL.");
+    android::sp<IUsbGadget> service2 = new UsbGadget();
     status = service2->registerAsService();
 
     if (status != OK) {
         ALOGE("Cannot register USB Gadget HAL service");
         return 1;
     }
+#endif
 
     ALOGI("USB HAL Ready.");
     joinRpcThreadpool();

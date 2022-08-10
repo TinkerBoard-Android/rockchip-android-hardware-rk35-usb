@@ -19,7 +19,7 @@ cc_binary {
     init_rc: ["android.hardware.usb@1.2-service.rockchip.rc"],
     vintf_fragments: [
         "android.hardware.usb@1.2-service.rockchip.xml",
-        "android.hardware.usb.gadget@1.1-service.rockchip.xml",
+//        "android.hardware.usb.gadget@1.1-service.rockchip.xml",
     ],
     srcs: ["service.cpp", "Usb.cpp", "UsbGadget.cpp"],
     shared_libs: [
